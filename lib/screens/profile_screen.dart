@@ -2,6 +2,7 @@
 import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import '../services/user_service.dart';
+import '../services/note_service.dart';
 
 class ProfileScreen extends StatefulWidget {
   final String username;
@@ -13,8 +14,7 @@ class ProfileScreen extends StatefulWidget {
 }
 
 class _ProfileScreenState extends State<ProfileScreen> {
-  String? email;
-  String? fullName;
+  int noteCount = 0;
 
   @override
   void initState() {
@@ -23,12 +23,16 @@ class _ProfileScreenState extends State<ProfileScreen> {
   }
 
   Future<void> _loadProfileData() async {
-    // Di implementasi sebenarnya, kita akan mengambil data dari database
-    // Untuk sekarang, kita gunakan data dummy
-    setState(() {
-      email = '-';
-      fullName = widget.username; // Gunakan username sebagai nama lengkap awal
-    });
+    // Ambil user_id berdasarkan username
+    int? userId = await UserService.getUserId(widget.username);
+
+    if (userId != null) {
+      // Ambil jumlah catatan berdasarkan user_id
+      List<dynamic> notes = await NoteService.getAllNotes(userId);
+      setState(() {
+        noteCount = notes.length;
+      });
+    }
   }
 
   @override
@@ -52,47 +56,22 @@ class _ProfileScreenState extends State<ProfileScreen> {
           child: Column(
             children: [
               // Avatar Placeholder
-              Stack(
-                alignment: Alignment.bottomRight,
-                children: [
-                  CircleAvatar(
-                    radius: 60,
-                    backgroundColor: Colors.grey[300],
-                    child: fullName != null && fullName!.isNotEmpty
-                        ? Text(
-                            fullName!.substring(0, 1).toUpperCase(),
-                            style: const TextStyle(
-                              fontSize: 30,
-                              fontWeight: FontWeight.bold,
-                              color: Colors.white,
-                            ),
-                          )
-                        : const Icon(
-                            Icons.person,
-                            size: 50,
-                            color: Colors.grey[600],
-                          ),
+              CircleAvatar(
+                radius: 60,
+                backgroundColor: Colors.grey[300],
+                child: Text(
+                  widget.username.substring(0, 1).toUpperCase(),
+                  style: const TextStyle(
+                    fontSize: 30,
+                    fontWeight: FontWeight.bold,
+                    color: Colors.white,
                   ),
-                  Positioned(
-                    child: Container(
-                      padding: const EdgeInsets.all(4),
-                      decoration: BoxDecoration(
-                        color: Colors.blue,
-                        shape: BoxShape.circle,
-                      ),
-                      child: const Icon(
-                        Icons.camera_alt,
-                        size: 16,
-                        color: Colors.white,
-                      ),
-                    ),
-                  ),
-                ],
+                ),
               ),
               const SizedBox(height: 24),
-              // Nama Lengkap
+              // Nama Pengguna
               Text(
-                fullName ?? widget.username,
+                widget.username,
                 style: const TextStyle(
                   fontSize: 22,
                   fontWeight: FontWeight.w600,
@@ -121,7 +100,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       const Text(
-                        'Informasi Akun',
+                        'Statistik Akun',
                         style: TextStyle(
                           fontSize: 18,
                           fontWeight: FontWeight.w600,
@@ -129,25 +108,21 @@ class _ProfileScreenState extends State<ProfileScreen> {
                         ),
                       ),
                       const SizedBox(height: 16),
-                      _buildInfoRow(Icons.email, 'Email: ${email ?? '-'}'),
-                      const SizedBox(height: 12),
-                      _buildInfoRow(Icons.person, 'Nama Lengkap: ${fullName ?? '-'}'),
+                      _buildInfoRow(Icons.book, 'Jumlah Catatan: $noteCount'),
                       const SizedBox(height: 12),
                       _buildInfoRow(Icons.calendar_today, 'Akun Dibuat: -'),
-                      const SizedBox(height: 12),
-                      _buildInfoRow(Icons.book, 'Jumlah Catatan: -'),
                     ],
                   ),
                 ),
               ),
               const SizedBox(height: 32),
-              // Tombol Edit Profile
+              // Tombol Lihat Catatan
               SizedBox(
                 width: double.infinity,
                 height: 50,
                 child: ElevatedButton(
                   onPressed: () {
-                    _showEditProfileDialog();
+                    Navigator.pop(context); // Kembali ke dashboard
                   },
                   style: ElevatedButton.styleFrom(
                     backgroundColor: Colors.grey[100],
@@ -158,7 +133,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                     ),
                   ),
                   child: const Text(
-                    'Edit Profil',
+                    'Lihat Catatan Saya',
                     style: TextStyle(
                       fontSize: 16,
                       fontWeight: FontWeight.w500,
@@ -224,79 +199,6 @@ class _ProfileScreenState extends State<ProfileScreen> {
           ),
         ),
       ],
-    );
-  }
-
-  void _showEditProfileDialog() {
-    String newFullName = fullName ?? widget.username;
-    String newEmail = email ?? '';
-
-    showDialog(
-      context: context,
-      builder: (BuildContext context) {
-        return AlertDialog(
-          title: const Text('Edit Profil'),
-          content: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              TextField(
-                decoration: const InputDecoration(
-                  labelText: 'Nama Lengkap',
-                  prefixIcon: Icon(Icons.person),
-                ),
-                initialValue: newFullName,
-                onChanged: (value) {
-                  newFullName = value;
-                },
-              ),
-              const SizedBox(height: 16),
-              TextField(
-                decoration: const InputDecoration(
-                  labelText: 'Email',
-                  prefixIcon: Icon(Icons.email),
-                ),
-                initialValue: newEmail,
-                onChanged: (value) {
-                  newEmail = value;
-                },
-              ),
-            ],
-          ),
-          actions: [
-            TextButton(
-              onPressed: () {
-                Navigator.of(context).pop();
-              },
-              child: const Text(
-                'Batal',
-                style: TextStyle(color: Colors.grey),
-              ),
-            ),
-            ElevatedButton(
-              onPressed: () {
-                // Di implementasi sebenarnya, kita akan menyimpan data ke database
-                setState(() {
-                  fullName = newFullName;
-                  email = newEmail;
-                });
-
-                Navigator.of(context).pop();
-                ScaffoldMessenger.of(context).showSnackBar(
-                  const SnackBar(
-                    content: Text('Profil berhasil diperbarui'),
-                    backgroundColor: Colors.green,
-                  ),
-                );
-              },
-              style: ElevatedButton.styleFrom(
-                backgroundColor: Colors.blue,
-                foregroundColor: Colors.white,
-              ),
-              child: const Text('Simpan'),
-            ),
-          ],
-        );
-      },
     );
   }
 }
