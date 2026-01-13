@@ -70,11 +70,11 @@ class _NoteFormScreenState extends State<NoteFormScreen> {
     }
 
     // Simpan catatan
-    await NoteService.saveNote(note);
+    Note savedNote = await NoteService.saveNote(note);
 
     // Panggil callback jika disediakan
     if (widget.onSave != null) {
-      widget.onSave!(note);
+      widget.onSave!(savedNote);
     }
 
     setState(() {

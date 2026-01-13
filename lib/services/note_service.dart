@@ -12,13 +12,22 @@ class NoteService {
   }
 
   // Menyimpan catatan baru
-  static Future<void> saveNote(Note note) async {
+  static Future<Note> saveNote(Note note) async {
     if (note.id != null) {
       // Jika id sudah ada, berarti update
       await _dbHelper.updateNote(note);
+      return note;
     } else {
       // Jika id null, berarti insert baru
-      await _dbHelper.insertNote(note);
+      int insertedId = await _dbHelper.insertNote(note);
+      // Return catatan dengan ID yang baru dihasilkan
+      return Note(
+        id: insertedId,
+        title: note.title,
+        content: note.content,
+        date: note.date,
+        userId: note.userId,
+      );
     }
   }
 

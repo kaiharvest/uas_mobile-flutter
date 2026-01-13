@@ -311,10 +311,29 @@ class _NotesListScreenState extends State<NotesListScreen> {
                                     );
 
                                     if (confirmed == true) {
-                                      await NoteService.deleteNote(note.id!);
-                                      setState(() {
-                                        notes.removeAt(index);
-                                      });
+                                      try {
+                                        await NoteService.deleteNote(note.id!);
+                                        // Hapus dari daftar UI
+                                        setState(() {
+                                          notes.removeAt(index);
+                                        });
+
+                                        // Tampilkan snackbar sukses
+                                        ScaffoldMessenger.of(context).showSnackBar(
+                                          const SnackBar(
+                                            content: Text('Catatan berhasil dihapus'),
+                                            backgroundColor: Colors.green,
+                                          ),
+                                        );
+                                      } catch (e) {
+                                        // Tampilkan snackbar error jika gagal
+                                        ScaffoldMessenger.of(context).showSnackBar(
+                                          const SnackBar(
+                                            content: Text('Gagal menghapus catatan'),
+                                            backgroundColor: Colors.red,
+                                          ),
+                                        );
+                                      }
                                     }
                                   },
                                 ),
